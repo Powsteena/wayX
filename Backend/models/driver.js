@@ -23,9 +23,22 @@ const DriverSchema = new mongoose.Schema({
     licenseNumber: {
         type: String,
         required: true
+    },
+    documents: [{
+        type: String, // Array to store file paths or URLs for multiple documents
+        required: true
+    }],
+    isApproved: {
+        type: Boolean, // Determines if the driver is approved by admin
+        default: false
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
     }
 });
 
+// Hash the password before saving
 DriverSchema.pre('save', async function(next) {
     if (!this.isModified('password')) {
         return next();

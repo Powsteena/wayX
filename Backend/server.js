@@ -7,6 +7,7 @@ const dotenv = require('dotenv');
 const bodyParser = require('body-parser');
 const authRoutes = require('./routes/auth');
 const driverRoutes = require('./routes/driver');
+const adminRoutes = require('./routes/admin'); // Import admin routes
 
 dotenv.config();
 
@@ -29,6 +30,9 @@ app.use('/api/auth', authRoutes);
 
 // Register driver routes
 app.use('/api/driver', driverRoutes);
+
+// Register admin routes
+app.use('/api/admin', adminRoutes); // Add this line to include admin routes
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

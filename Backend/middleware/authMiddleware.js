@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const Driver = require('../models/driver'); // Ensure the correct model name
+const Driver = require('../models/driver');
 require('dotenv').config();
 
 module.exports = async function (req, res, next) {
@@ -12,13 +12,16 @@ module.exports = async function (req, res, next) {
 
     try {
         // Extract the token value after the Bearer keyword
-        const decoded = jwt.verify(token.split(' ')[1], process.env.JWT_SECRET);
+        const extractedToken = token.split(' ')[1];
+        console.log('Extracted token:', extractedToken); // Log token for debugging
+        const decoded = jwt.verify(extractedToken, process.env.JWT_SECRET);
 
-        // Check for role, assuming role is defined in the token payload
+        // Extract role and id from the token payload
         const { role, id } = decoded;
 
+        // Role-based logic for 'user', 'driver', and 'admin'
         if (role === 'user') {
-            req.user = await User.findById(id).select('-password'); // Exclude password from user object
+            req.user = await User.findById(id).select('-password');
             if (!req.user) {
                 return res.status(404).json({ msg: 'User not found' });
             }
@@ -28,17 +31,18 @@ module.exports = async function (req, res, next) {
                 return res.status(404).json({ msg: 'Driver not found' });
             }
         } else if (role === 'admin') {
-            req.admin = await User.findById(id); // Assuming admin is also a User
+            req.admin = await User.findById(id).select('-password');
             if (!req.admin || req.admin.role !== 'admin') {
-                return res.status(404).json({ msg: 'Admin not found or not authorized' });
+                return res.status(403).json({ msg: 'Admin access denied' });
             }
         } else {
             return res.status(401).json({ msg: 'Invalid role' });
         }
 
+        req.role = role;
         next();
     } catch (err) {
-        console.error(err);
-        res.status(401).json({ msg: 'Token is not valid' });
+        console.error('Token verification error:', err.message);
+        return res.status(401).json({ msg: 'Token is not valid' });
     }
 };
