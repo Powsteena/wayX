@@ -9,10 +9,18 @@ const authRoutes = require('./routes/auth');
 const driverRoutes = require('./routes/driver');
 const adminRoutes = require('./routes/admin'); // Import admin routes
 
+
 dotenv.config();
 
 const app = express();
-app.use(cors());
+// app.use(cors());
+
+app.use(cors({
+    origin: 'http://localhost:3000', // Your frontend URL
+    methods: 'GET,POST,PUT,DELETE',
+    allowedHeaders: 'Content-Type,Authorization'
+}));
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true })); // For parsing URL-encoded bodies
 

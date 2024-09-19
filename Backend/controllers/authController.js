@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 
 // Register new user
 exports.register = async (req, res) => {
-    const { username, email, password,role } = req.body;
+    const { username, email, password, role } = req.body;
 
     try {
         let user = await User.findOne({ email });
@@ -12,30 +12,33 @@ exports.register = async (req, res) => {
             return res.status(400).json({ msg: 'User already exists' });
         }
 
-        // Default role to 'user'; admin roles are managed separately
+        // Default role to 'user' if not provided
         user = new User({
             username,
             email,
             password,
-            role: 'user'  // Default role
+            role: role || 'user'  // Use provided role or default to 'user'
         });
 
+        // Save user to the database
         await user.save();
 
         const payload = {
             user: {
                 id: user.id,
-                role: user.role  // Include role in the payload
+                role: user.role  // Use role in the payload
             }
         };
 
+        // Sign the JWT token
         jwt.sign(
             payload,
             process.env.JWT_SECRET,
             { expiresIn: '1h' },
             (err, token) => {
                 if (err) throw err;
-                res.json({ token, role: user.role });             }
+                res.json({ token, role: user.role }); // Return token and role
+            }
         );
     } catch (err) {
         console.error(err.message);
@@ -43,82 +46,45 @@ exports.register = async (req, res) => {
     }
 };
 
-// Login user
-// exports.login = async (req, res) => {
-//     const { email, password } = req.body;
-
-//     try {
-//         let user = await User.findOne({ email });
-//         if (!user) {
-//             return res.status(400).json({ msg: 'Invalid Credentials' });
-//         }
-
-//         const isMatch = await bcrypt.compare(password, user.password);
-//         if (!isMatch) {
-//             return res.status(400).json({ msg: 'Invalid Credentials' });
-//         }
-
-//         const payload = {
-//             user: {
-//                 id: user.id,
-//                 role: user.role  // Include role in the payload
-//             }
-//         };
-
-//         jwt.sign(
-//             { expiresIn: '1h' },
-//             (err, token) => {
-//               if (err) throw err;
-//               res.json({
-//                 token,
-//                 role: user.role  // Include role in the response
-//               });
-//             }
-//         );
-//     } catch (err) {
-//         console.error(err.message);
-//         res.status(500).send('Server error');
-//     }
-// };
-
+// User login
 exports.login = async (req, res) => {
     const { email, password } = req.body;
   
     try {
-      let user = await User.findOne({ email });
-      if (!user) {
-        return res.status(400).json({ msg: 'Invalid Credentials' });
-      }
-  
-      const isMatch = await bcrypt.compare(password, user.password);
-      if (!isMatch) {
-        return res.status(400).json({ msg: 'Invalid Credentials' });
-      }
-  
-      const payload = {
-        user: {
-          id: user.id,
-          role: user.role  // Include role in the payload
+        let user = await User.findOne({ email });
+        if (!user) {
+            return res.status(400).json({ msg: 'Invalid Credentials' });
         }
-      };
   
-      jwt.sign(
-        payload,
-        process.env.JWT_SECRET,
-        { expiresIn: '1h' },
-        (err, token) => {
-          if (err) throw err;
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ msg: 'Invalid Credentials' });
+        }
+  
+        const payload = {
+            user: {
+                id: user.id,
+                role: user.role  // Use role in the payload
+            }
+        };
+  
+        // Sign the JWT token
+        jwt.sign(
+            payload,
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' },
+            (err, token) => {
+                if (err) throw err;
+                res.json({ token, role: user.role }); // Return token and role
+            }
+        );
+        ;
         
-          res.json({ token, role: user.role }); 
-        }
-      );
     } catch (err) {
-      console.error(err.message);
-      res.status(500).send('Server error');
+        console.error(err.message);
+        res.status(500).send('Server error');
     }
-  };
-  
-
+};
 
 // Get user details
 exports.getUser = async (req, res) => {
@@ -171,7 +137,7 @@ exports.promoteToAdmin = async (req, res) => {
             return res.status(404).json({ msg: 'User not found' });
         }
 
-        user.role = 'admin';  // Update role to admin
+        user.role = 'admin';  // Update role to 'admin'
         await user.save();
 
         res.json({ msg: 'User promoted to admin', user });

@@ -1,48 +1,59 @@
+
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Driver = require('../models/driver');
 require('dotenv').config();
 
 module.exports = async function (req, res, next) {
-    const token = req.header('Authorization');
+    // Extract token from header
+    const authHeader = req.header('Authorization');
 
-    if (!token) {
-        return res.status(401).json({ msg: 'No token, authorization denied' });
+    // Check for token existence
+    if (!authHeader) {
+        return res.status(401).json({ msg: 'No token provided, authorization denied' });
     }
 
     try {
-        // Extract the token value after the Bearer keyword
-        const extractedToken = token.split(' ')[1];
-        console.log('Extracted token:', extractedToken); // Log token for debugging
-        const decoded = jwt.verify(extractedToken, process.env.JWT_SECRET);
+        // Extract the actual token after 'Bearer'
+        const token = authHeader.split(' ')[1];
 
-        // Extract role and id from the token payload
-        const { role, id } = decoded;
+        // Verify the token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-        // Role-based logic for 'user', 'driver', and 'admin'
-        if (role === 'user') {
-            req.user = await User.findById(id).select('-password');
-            if (!req.user) {
-                return res.status(404).json({ msg: 'User not found' });
-            }
-        } else if (role === 'driver') {
-            req.driver = await Driver.findById(id);
-            if (!req.driver) {
-                return res.status(404).json({ msg: 'Driver not found' });
-            }
-        } else if (role === 'admin') {
-            req.admin = await User.findById(id).select('-password');
-            if (!req.admin || req.admin.role !== 'admin') {
-                return res.status(403).json({ msg: 'Admin access denied' });
-            }
-        } else {
-            return res.status(401).json({ msg: 'Invalid role' });
+        // Destructure the decoded token
+        const { user } = decoded;
+
+        // Role-based user retrieval
+        let userDoc;
+        if (user.role === 'user' || user.role === 'admin') {
+            userDoc = await User.findById(user.id).select('-password');
+        } else if (user.role === 'driver') {
+            userDoc = await Driver.findById(user.id);
         }
 
-        req.role = role;
+        // Check if user/driver exists
+        if (!userDoc) {
+            return res.status(404).json({ msg: `${user.role.charAt(0).toUpperCase() + user.role.slice(1)} not found` });
+        }
+
+        // Admin-specific role check
+        if (user.role === 'admin' && userDoc.role !== 'admin') {
+            return res.status(403).json({ msg: 'Admin access denied' });
+        }
+
+        // Attach user and role to request
+        req.user = userDoc;
+        req.role = user.role;
+
         next();
     } catch (err) {
-        console.error('Token verification error:', err.message);
-        return res.status(401).json({ msg: 'Token is not valid' });
+        console.error('Token Verification Error:', err);
+        if (err.name === 'TokenExpiredError') {
+            return res.status(401).json({ msg: 'Token has expired' });
+        } else if (err.name === 'JsonWebTokenError') {
+            return res.status(401).json({ msg: 'Token is not valid' });
+        } else {
+            return res.status(500).json({ msg: 'Token verification failed' });
+        }
     }
 };
