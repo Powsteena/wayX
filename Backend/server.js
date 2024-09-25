@@ -8,6 +8,7 @@ const bodyParser = require('body-parser');
 const authRoutes = require('./routes/auth');
 const driverRoutes = require('./routes/driver');
 const adminRoutes = require('./routes/admin'); // Import admin routes
+const rideRequestRouter = require('./routes/RideRequestSchema'); // Adjust path as needed
 
 
 dotenv.config();
@@ -41,6 +42,12 @@ app.use('/api/driver', driverRoutes);
 
 // Register admin routes
 app.use('/api/admin', adminRoutes); // Add this line to include admin routes
+
+// Use the ride request router
+app.use('/api/ride-request', rideRequestRouter); // All routes defined in the router will now be prefixed with /api
+
+
+
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
