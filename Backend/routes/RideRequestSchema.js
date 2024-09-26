@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const RideRequest = require('../models/RideRequestSchema');  // Adjust the path as needed
+const authMiddleware = require('../middleware/authMiddleware'); 
 
-router.post('/', async (req, res) => {
+router.post('/', authMiddleware, async (req, res) => {
   try {
     const { pickup, dropoff, vehicleType, numPassengers } = req.body;
 
