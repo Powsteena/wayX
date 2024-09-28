@@ -3,15 +3,10 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const {
-    registerDriver,
-    loginDriver,
-    getDriver,
-    updateDriver,
-    deleteDriver,
-    approveDriver // Controller for admin approval
-} = require('../controllers/driverController');
-const auth = require('../middleware/authMiddleware'); // Single middleware for auth and role checking
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const Driver = require('../models/driver');
+const authMiddleware = require('../middleware/authMiddleware');
 
 // Define the upload directory
 const uploadDir = path.join(__dirname, '../uploads');
@@ -23,56 +18,115 @@ if (!fs.existsSync(uploadDir)) {
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, uploadDir); // Specify your upload directory
+    destination: (req, file, cb) => {
+        cb(null, uploadDir); // Specify the upload directory
     },
-    filename: function (req, file, cb) {
+    filename: (req, file, cb) => {
         cb(null, Date.now() + '-' + file.originalname); // Customize the file name
     }
 });
 
 const upload = multer({ storage });
 
-// Register Driver with document uploads
-router.post(
-    '/register',
+// POST /api/driver/register - Register Driver with document uploads
+router.post('/register', 
     upload.fields([
         { name: 'licenseImage', maxCount: 1 },
         { name: 'vehicleRegistration', maxCount: 1 },
         { name: 'insuranceDocument', maxCount: 1 }
     ]),
-    registerDriver
+    async (req, res) => {
+        const { username, email, password, licenseNumber, vehicleType } = req.body;
+
+        try {
+            let driver = await Driver.findOne({ email });
+            if (driver) {
+                return res.status(400).json({ msg: 'Driver already exists' });
+            }
+
+            if (!req.files['licenseImage'] || !req.files['vehicleRegistration'] || !req.files['insuranceDocument']) {
+                return res.status(400).json({ msg: 'All required documents must be uploaded' });
+            }
+
+            driver = new Driver({
+                username,
+                email,
+                password,
+                licenseNumber,
+                vehicleType,
+                licenseImage: req.files['licenseImage'][0].path,
+                vehicleRegistration: req.files['vehicleRegistration'][0].path,
+                insuranceDocument: req.files['insuranceDocument'][0].path,
+                isApproved: false
+            });
+
+            await driver.save();
+
+            const payload = {
+                driver: {
+                    id: driver.id,
+                    role: 'driver'
+                }
+            };
+
+            jwt.sign(
+                payload,
+                process.env.JWT_SECRET,
+                { expiresIn: '1h' },
+                (err, token) => {
+                    if (err) throw err;
+                    res.json({ token, role: 'driver' });
+                }
+            );
+        } catch (error) {
+            console.error('Registration Error:', error);
+            if (error.name === 'ValidationError') {
+                const errors = Object.values(error.errors).map(err => err.message);
+                return res.status(400).json({ errors });
+            }
+            res.status(500).json({ message: 'Registration failed. Please try again.' });
+        }
+    }
 );
 
-// Login Driver
-router.post('/login', loginDriver);
 
-// Get Driver Profile
-router.get('/profile', auth, getDriver);
+// POST /api/driver/login - Login Driver
+router.post('/login', async (req, res) => {
+    const { email, password } = req.body;
 
-// Update Driver Profile (with file uploads)
-router.put(
-    '/profile',
-    auth,
-    upload.fields([
-        { name: 'licenseImage', maxCount: 1 },
-        { name: 'vehicleRegistration', maxCount: 1 },
-        { name: 'insuranceDocument', maxCount: 1 }
-    ]),
-    updateDriver
-);
+    try {
+        let driver = await Driver.findOne({ email });
+        if (!driver) {
+            return res.status(400).json({ msg: 'Invalid Credentials' });
+        }
 
-// Delete Driver Profile
-router.delete('/profile', auth, deleteDriver);
+        const isMatch = await bcrypt.compare(password, driver.password);
+        if (!isMatch) {
+            return res.status(400).json({ msg: 'Invalid Credentials' });
+        }
 
-// Admin approves a driver
-router.put('/approve/:driverId', auth, (req, res, next) => {
-    // Check if the user has admin privileges
-    if (req.admin) {
-        return approveDriver(req, res);
-    } else {
-        return res.status(403).json({ message: 'Access denied. Admins only' }); // Unauthorized access
+        const payload = {
+            driver: {
+                id: driver.id,
+                role: 'driver'
+            }
+        };
+
+        jwt.sign(
+            payload,
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' },
+            (err, token) => {
+                if (err) throw err;
+                res.json({ token, role: 'driver' });
+            }
+        );
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server error');
     }
 });
+
+
 
 module.exports = router;

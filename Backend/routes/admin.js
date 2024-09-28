@@ -140,7 +140,8 @@ router.delete('/user/:id', adminCheck, async (req, res) => {
     }
 });
 
-router.get('/drivers', adminCheck, async (req, res) => {
+// get all drivers
+router.get('/driver', adminCheck, async (req, res) => {
     try {
         const drivers = await Driver.find().select('-password');
         res.json(drivers);

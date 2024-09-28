@@ -5,7 +5,12 @@ const jwt = require('jsonwebtoken');
 // Driver Registration
 exports.registerDriver = async (req, res) => {
     const { username, email, password, vehicleType, licenseNumber } = req.body;
-    const { licenseImage, vehicleRegistration, insuranceDocument } = req.files; // Assuming you're using multer for file uploads
+    const { licenseImage, vehicleRegistration, insuranceDocument } = req.files || {}; // Ensure req.files exists
+
+    // Check if all required files are uploaded
+    if (!licenseImage || !vehicleRegistration || !insuranceDocument) {
+        return res.status(400).json({ msg: 'All documents (license, vehicle registration, insurance) are required.' });
+    }
 
     try {
         let driver = await Driver.findOne({ email });
@@ -13,43 +18,44 @@ exports.registerDriver = async (req, res) => {
             return res.status(400).json({ msg: 'Driver already exists' });
         }
 
+        // Create new driver object
         driver = new Driver({
             username,
             email,
             password,
             vehicleType,
             licenseNumber,
-            licenseImage: licenseImage[0]?.path, // Using optional chaining
+            licenseImage: licenseImage[0]?.path, // Handle file paths properly
             vehicleRegistration: vehicleRegistration[0]?.path,
             insuranceDocument: insuranceDocument[0]?.path
         });
 
-        // Hash password before saving
+        // Hash the password before saving
         driver.password = await bcrypt.hash(password, 10);
         await driver.save();
 
+        // Generate JWT token
         const payload = {
             driver: {
                 id: driver.id,
-                isApproved: driver.isApproved // Include approval status in payload
+                isApproved: driver.isApproved // Include approval status
             }
         };
 
-    
         jwt.sign(
             payload,
             process.env.JWT_SECRET,
             { expiresIn: '1h' },
             (err, token) => {
                 if (err) {
-                    console.error(err);
+                    console.error('Token generation error:', err);
                     return res.status(500).json({ msg: 'Token generation error' });
                 }
                 res.json({ token });
             }
         );
     } catch (err) {
-        console.error(err.message);
+        console.error('Server error during registration:', err.message);
         res.status(500).json({ msg: 'Server error during registration' });
     }
 };
@@ -61,16 +67,17 @@ exports.loginDriver = async (req, res) => {
     try {
         let driver = await Driver.findOne({ email });
         if (!driver) {
-            return res.status(400).json({ msg: 'Invalid Credentials' });
+            return res.status(400).json({ msg: 'Invalid credentials' });
         }
 
+        // Check if the driver's account is approved
         if (!driver.isApproved) {
             return res.status(403).json({ msg: 'Your account is pending approval by the admin' });
         }
 
         const isMatch = await bcrypt.compare(password, driver.password);
         if (!isMatch) {
-            return res.status(400).json({ msg: 'Invalid Credentials' });
+            return res.status(400).json({ msg: 'Invalid credentials' });
         }
 
         const payload = {
@@ -86,14 +93,14 @@ exports.loginDriver = async (req, res) => {
             { expiresIn: '1h' },
             (err, token) => {
                 if (err) {
-                    console.error(err);
+                    console.error('Token generation error:', err);
                     return res.status(500).json({ msg: 'Token generation error' });
                 }
                 res.json({ token });
             }
         );
     } catch (err) {
-        console.error(err.message);
+        console.error('Server error during login:', err.message);
         res.status(500).json({ msg: 'Server error during login' });
     }
 };
@@ -107,7 +114,7 @@ exports.getDriver = async (req, res) => {
         }
         res.json(driver);
     } catch (err) {
-        console.error(err.message);
+        console.error('Server error fetching driver profile:', err.message);
         res.status(500).json({ msg: 'Server error fetching driver profile' });
     }
 };
@@ -115,7 +122,7 @@ exports.getDriver = async (req, res) => {
 // Update Driver Profile
 exports.updateDriver = async (req, res) => {
     const { username, email, password, vehicleType, licenseNumber } = req.body;
-    const { licenseImage, vehicleRegistration, insuranceDocument } = req.files;
+    const { licenseImage, vehicleRegistration, insuranceDocument } = req.files || {}; // Ensure req.files exists
 
     try {
         const driver = await Driver.findById(req.driver.id);
@@ -124,7 +131,13 @@ exports.updateDriver = async (req, res) => {
         }
 
         if (username) driver.username = username;
-        if (email) driver.email = email;
+        if (email && email !== driver.email) {
+            const emailExists = await Driver.findOne({ email });
+            if (emailExists) {
+                return res.status(400).json({ msg: 'Email already in use' });
+            }
+            driver.email = email;
+        }
         if (password) driver.password = await bcrypt.hash(password, 10);
         if (vehicleType) driver.vehicleType = vehicleType;
         if (licenseNumber) driver.licenseNumber = licenseNumber;
@@ -135,7 +148,7 @@ exports.updateDriver = async (req, res) => {
         await driver.save();
         res.json(driver);
     } catch (err) {
-        console.error(err.message);
+        console.error('Server error updating driver profile:', err.message);
         res.status(500).json({ msg: 'Server error updating driver profile' });
     }
 };
@@ -149,12 +162,12 @@ exports.deleteDriver = async (req, res) => {
         }
         res.json({ msg: 'Driver deleted' });
     } catch (err) {
-        console.error(err.message);
+        console.error('Server error deleting driver profile:', err.message);
         res.status(500).json({ msg: 'Server error deleting driver profile' });
     }
 };
 
-// Admin approval of driver
+// Admin Approval of Driver
 exports.approveDriver = async (req, res) => {
     try {
         const driver = await Driver.findById(req.params.driverId);
@@ -162,11 +175,15 @@ exports.approveDriver = async (req, res) => {
             return res.status(404).json({ msg: 'Driver not found' });
         }
 
+        if (driver.isApproved) {
+            return res.status(400).json({ msg: 'Driver is already approved' });
+        }
+
         driver.isApproved = true;
         await driver.save();
-        res.json({ msg: 'Driver approved' });
+        res.json({ msg: 'Driver approved successfully' });
     } catch (err) {
-        console.error(err.message);
+        console.error('Server error approving driver:', err.message);
         res.status(500).json({ msg: 'Server error approving driver' });
     }
 };
