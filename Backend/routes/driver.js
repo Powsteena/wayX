@@ -89,7 +89,6 @@ router.post('/register',
     }
 );
 
-
 // POST /api/driver/login - Login Driver
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
@@ -103,6 +102,11 @@ router.post('/login', async (req, res) => {
         const isMatch = await bcrypt.compare(password, driver.password);
         if (!isMatch) {
             return res.status(400).json({ msg: 'Invalid Credentials' });
+        }
+
+        // Check if the driver is approved by the admin
+        if (!driver.isApproved) {
+            return res.status(403).json({ msg: 'Your account is not approved yet. Please contact support.' });
         }
 
         const payload = {
@@ -127,6 +131,68 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// // Update driver availability and live location
+// router.post('/update-availability', async (req, res) => {
+//     const { driverId, isAvailable, latitude, longitude } = req.body;
+  
+//     try {
+//       const updateData = { isAvailable };
+  
+//       // If the driver is available, update the live location
+//       if (isAvailable && latitude && longitude) {
+//         updateData.liveLocation = { latitude, longitude };
+//       } else {
+//         updateData.liveLocation = null; // Set to null if not available
+//       }
+  
+//       const updatedDriver = await Driver.findByIdAndUpdate(
+//         driverId,
+//         updateData,
+//         { new: true }
+//       );
+  
+//       if (!updatedDriver) {
+//         return res.status(404).json({ message: 'Driver not found' });
+//       }
+  
+//       res.json(updatedDriver);
+//     } catch (error) {
+//       console.error('Error updating driver availability:', error);
+//       res.status(500).json({ message: 'Server error', error });
+//     }
+//   });
 
+
+// Update driver availability and live location
+router.post('/update-availability', async (req, res) => {
+    const { driverId, isAvailable, address } = req.body; // Changed to address
+
+    try {
+      const updateData = { isAvailable };
+  
+      // If the driver is available, update the address
+      if (isAvailable && address) {
+        updateData.liveLocation = address; // Store the address instead of latitude and longitude
+      } else {
+        updateData.liveLocation = null; // Set to null if not available
+      }
+  
+      const updatedDriver = await Driver.findByIdAndUpdate(
+        driverId,
+        updateData,
+        { new: true }
+      );
+  
+      if (!updatedDriver) {
+        return res.status(404).json({ message: 'Driver not found' });
+      }
+  
+      res.json(updatedDriver);
+    } catch (error) {
+      console.error('Error updating driver availability:', error);
+      res.status(500).json({ message: 'Server error', error });
+    }
+  });
+  
 
 module.exports = router;

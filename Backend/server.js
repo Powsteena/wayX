@@ -15,7 +15,7 @@ dotenv.config();
 
 const app = express();
 // app.use(cors());
-
+app.use(express.json());
 app.use(cors({
     origin: 'http://localhost:3000', // Your frontend URL
     methods: 'GET,POST,PUT,DELETE,PATCH',
@@ -45,7 +45,6 @@ app.use('/api/admin', adminRoutes); // Add this line to include admin routes
 
 // Use the ride request router
 app.use('/api/ride-request', rideRequestRouter); // All routes defined in the router will now be prefixed with /api
-
 
 
 
