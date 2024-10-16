@@ -124,4 +124,14 @@ router.delete('/user', authMiddleware, async (req, res) => {
     }
 });
 
+router.get('/count', async (req, res) => {
+    try {
+        const userCount = await User.countDocuments();
+        res.json({ count: userCount });
+    } catch (error) {
+        console.error('Error fetching user count:', error);
+        res.status(500).json({ error: 'Failed to fetch user count' });
+    }
+});
+
 module.exports = router;

@@ -1,42 +1,3 @@
-// const express = require('express');
-// const router = express.Router();
-// const RideRequest = require('../models/RideRequestSchema');  // Adjust the path as needed
-// const authMiddleware = require('../middleware/authMiddleware'); 
-
-// router.post('/', authMiddleware, async (req, res) => {
-//   try {
-//     const { pickup, dropoff, vehicleType, numPassengers } = req.body;
-
-//     // Check for authenticated user
-//     if (!req.user || !req.user._id) {
-//         return res.status(401).json({ message: 'User not authenticated' });
-//     }
-
-//     const newRideRequest = new RideRequest({
-//       pickup: {
-//         address: pickup,
-//         coordinates: req.body.pickupCoords,
-//       },
-//       dropoff: {
-//         address: dropoff,
-//         coordinates: req.body.dropoffCoords,
-//       },
-//       vehicleType,
-//       numPassengers,
-//       userId: req.user._id,  // Assuming you have user authentication in place
-//     });
-
-//     await newRideRequest.save();
-//     res.status(201).json({ message: 'Ride request created successfully', rideRequest: newRideRequest });
-//   } catch (error) {
-//     console.error('Error creating ride request:', error);
-//     res.status(500).json({ message: 'Error creating ride request' });
-//   }
-// });
-
-// module.exports = router;
-
-
 
 
 const express = require('express');
@@ -49,13 +10,29 @@ const { io } = require('../server');  // Import Socket.io instance
 // Create Ride Request and notify drivers in real-time
 router.post('/', authMiddleware, async (req, res) => {
   try {
-    const { pickup, dropoff, vehicleType } = req.body;
+
+    console.log('Received request body:', JSON.stringify(req.body, null, 2));
+
+    const { pickup, dropoff, vehicleType, numPassengers } = req.body;
 
     // Ensure the user is authenticated
     if (!req.user || !req.user._id) {
       return res.status(401).json({ message: 'User not authenticated' });
     }
 
+
+    // Validate pickup and dropoff objects
+    if (!pickup.address || !pickup.coordinates || !dropoff.address || !dropoff.coordinates) {
+      console.log('Invalid pickup or dropoff data');
+      return res.status(400).json({ message: 'Invalid pickup or dropoff data' });
+    }
+
+   // Validate coordinates
+   if (!Array.isArray(pickup.coordinates) || pickup.coordinates.length !== 2 ||
+   !Array.isArray(dropoff.coordinates) || dropoff.coordinates.length !== 2) {
+ console.log('Invalid coordinates');
+ return res.status(400).json({ message: 'Invalid coordinates' });
+}
     // Create a new ride request document
     const newRideRequest = new RideRequest({
       pickup: {
@@ -73,26 +50,23 @@ router.post('/', authMiddleware, async (req, res) => {
 
     await newRideRequest.save();
 
-    // Validate pickup coordinates
-if (!pickup.coordinates || pickup.coordinates.length !== 2) {
-  return res.status(400).json({ message: 'Invalid pickup coordinates' });
-}
+    
 
 // Find nearest drivers based on vehicle type, location, and availability
 const nearbyDrivers = await Driver.find({
-  vehicleType: vehicleType, // Match vehicle type
-  isAvailable: true,  // Only available drivers
+  vehicleType: vehicleType, 
+  isAvailable: true,  
   'liveLocation.coordinates': {
     $near: {
       $geometry: {
         type: 'Point',
-        coordinates: pickup.coordinates,  // Pickup location for proximity
+        coordinates: req.body.pickup.coordinates,  
       },
       $maxDistance: 10000  // 10km radius
     }
   }
 });
-
+console.log('Nearby drivers found:', nearbyDrivers.length);
 
     if (nearbyDrivers.length > 0) {
       // Notify all relevant drivers via Socket.io
@@ -104,17 +78,30 @@ const nearbyDrivers = await Driver.find({
           vehicleType: newRideRequest.vehicleType,
         });
       });
-
-      // Respond with success message
-      res.status(201).json({ message: 'Ride request created and drivers notified', rideRequest: newRideRequest });
-    } else {
-      // If no nearby drivers found, respond accordingly
-      res.status(201).json({ message: 'Ride request created but no available drivers nearby', rideRequest: newRideRequest });
+    console.log('Drivers notified');
     }
+
+    // Respond with success message
+    res.status(201).json({ 
+      message: nearbyDrivers.length > 0 ? 'Ride request created and drivers notified' : 'Ride request created but no available drivers nearby', 
+      rideRequest: newRideRequest 
+    });
 
   } catch (error) {
     console.error('Error creating ride request:', error);
     res.status(500).json({ message: 'Error creating ride request' });
+  }
+});
+
+
+// Route to get the total number of rides
+router.get('/count', async (req, res) => {
+  try {
+    const rideCount = await RideRequest.countDocuments();
+    res.json({ count: rideCount });
+  } catch (error) {
+    console.error('Error fetching ride count:', error);
+    res.status(500).json({ error: 'Failed to fetch ride count' });
   }
 });
 

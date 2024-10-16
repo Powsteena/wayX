@@ -1,28 +1,3 @@
-// const mongoose = require('mongoose');
-
-// const rideRequestSchema = new mongoose.Schema({
-//   pickup: {
-//     address: String,
-//     coordinates: {
-//       type: [Number],  // [longitude, latitude]
-//       index: '2dsphere'  // Allows for geospatial queries
-//     }
-//   },
-//   dropoff: {
-//     address: String,
-//     coordinates: {
-//       type: [Number],  // [longitude, latitude]
-//       index: '2dsphere'
-//     }
-//   },
-//   vehicleType: String,
-//   numPassengers: Number,
-//   userId: mongoose.Schema.Types.ObjectId,  // Reference to the user who made the request
-//   createdAt: { type: Date, default: Date.now }
-// });
-
-// module.exports = mongoose.model('RideRequest', rideRequestSchema);
-
 
 const mongoose = require('mongoose');
 
@@ -44,7 +19,7 @@ const rideRequestSchema = new mongoose.Schema({
   vehicleType: String,
   numPassengers: Number,
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },  // Reference to the user who made the request
-  // driverId: { type: mongoose.Schema.Types.ObjectId, ref: 'Driver' },  // Reference to the driver who accepts the request
+  driverId: { type: mongoose.Schema.Types.ObjectId, ref: 'Driver' },  // Reference to the driver who accepts the request
   status: {
     type: String,
     enum: ['pending', 'accepted', 'rejected', 'completed'],  // Possible statuses for the ride request

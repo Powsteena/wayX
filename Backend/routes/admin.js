@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const Driver = require('../models/driver')
+const RideRequestSchema = require('../models/RideRequestSchema')
 const authMiddleware = require('../middleware/authMiddleware');
 const bcrypt = require('bcryptjs');
 
@@ -234,5 +235,31 @@ router.delete('/driver/:id', adminCheck, async (req, res) => {
         res.status(500).send('Server error');
     }
 });
+
+
+// GET /api/admin/riderequests - Fetch all ride requests (requires admin role)
+router.get('/rides', adminCheck, async (req, res) => {
+    try {
+        const rides = await RideRequestSchema.find()
+            .populate('userId', 'name email')  // Populate user details (e.g., name and email)
+            .populate('driverId', 'name vehicle')  // Populate driver details (e.g., name and vehicle info)
+            .select('-__v');  // Optionally exclude the __v field added by Mongoose
+
+        // Ensure pickup and dropoff are always present, even if empty
+        const ridesWithDefaultValues = rides.map((ride) => ({
+            ...ride._doc,
+            pickup: ride.pickup || { address: 'Not provided' },
+            dropoff: ride.dropoff || { address: 'Not provided' }
+        }));
+
+        res.json(ridesWithDefaultValues);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server error');
+    }
+});
+
+
+
 
 module.exports = router;
