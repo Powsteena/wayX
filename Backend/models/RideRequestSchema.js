@@ -3,14 +3,16 @@ const mongoose = require('mongoose');
 
 const rideRequestSchema = new mongoose.Schema({
   pickup: {
-    address: String,
+    address: {type:String,
+    required: [true, 'Pickup address is required']},// Validation
     coordinates: {
       type: [Number],  // [longitude, latitude]
       index: '2dsphere'  // Allows for geospatial queries
     }
   },
   dropoff: {
-    address: String,
+    address: {type:String,
+      required: [true, 'Dropoff address is required']}, // Validation
     coordinates: {
       type: [Number],  // [longitude, latitude]
       index: '2dsphere'

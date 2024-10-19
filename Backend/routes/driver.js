@@ -165,7 +165,7 @@ router.post('/update-availability', async (req, res) => {
         res.status(500).json({ message: 'Server error', error });
     }
 });
-  
+
 
 // Route to get the total number of drivers
 router.get('/count', async (req, res) => {
@@ -178,4 +178,7 @@ router.get('/count', async (req, res) => {
     }
   });
 
+
 module.exports = router;
+
+
