@@ -4,13 +4,15 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const bodyParser = require('body-parser');
-const http = require('http');  // Import http for socket.io
-const { Server } = require('socket.io');  // Import Socket.io
+const http = require('http');  
+const { Server } = require('socket.io'); 
 
 const authRoutes = require('./routes/auth');
 const driverRoutes = require('./routes/driver');
 const adminRoutes = require('./routes/admin');
-const rideRequestRouter = require('./routes/RideRequestSchema'); // Adjust path as needed
+const rideRequestRouter = require('./routes/RideRequestSchema'); 
+const contactRoute = require('./routes/contact'); 
+
 
 dotenv.config();
 
@@ -54,6 +56,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/ride-request', rideRequestRouter);
 
 app.use('/api/user', authRoutes);
+app.use('/api/contact', contactRoute);  
+
 
 // Socket.io connection handling
 io.on('connection', (socket) => {
