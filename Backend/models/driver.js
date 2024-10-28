@@ -52,8 +52,15 @@
 //         default: false
 //     },
 //     liveLocation: {
-//         type: String,
-//         default: null
+//         address: {
+//             type: String,
+//             default: null
+//         },
+//         coordinates: {
+//             type: [Number],  
+//             index: '2dsphere',  
+//             default: [0, 0]  
+//         }
 //     },
 //     createdAt: {
 //         type: Date,
@@ -61,6 +68,7 @@
 //     }
 // });
 
+// // Password hashing middleware
 // DriverSchema.pre('save', async function(next) {
 //     if (!this.isModified('password')) {
 //         return next();
@@ -103,7 +111,9 @@ const DriverSchema = new mongoose.Schema({
     },
     vehicleType: {
         type: String,
-        required: [true, 'Vehicle type is required']
+        required: [true, 'Vehicle type is required'],
+        enum: ['car', 'van', 'motorbike', 'auto'],
+        lowercase: true
     },
     licenseImage: {
         type: String,
@@ -129,22 +139,34 @@ const DriverSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    liveLocation: {
-        address: {
+    location: {
+        type: {
             type: String,
-            default: null
+            enum: ['Point'],
+            default: 'Point'
         },
         coordinates: {
-            type: [Number],  // [longitude, latitude]
-            index: '2dsphere',  // Allows for geospatial queries
-            default: [null, null]  // Default to [null, null]
+            type: [Number], // [longitude, latitude]
+            required: true,
+            default: [0, 0]
         }
+    },
+    socketId: {
+        type: String,
+        default: null
+    },
+    lastLocationUpdate: {
+        type: Date,
+        default: Date.now
     },
     createdAt: {
         type: Date,
         default: Date.now
     }
 });
+
+// Create geospatial index for location
+DriverSchema.index({ location: '2dsphere' });
 
 // Password hashing middleware
 DriverSchema.pre('save', async function(next) {
@@ -159,5 +181,17 @@ DriverSchema.pre('save', async function(next) {
         next(err);
     }
 });
+
+// Method to compare password
+DriverSchema.methods.comparePassword = async function(candidatePassword) {
+    return bcrypt.compare(candidatePassword, this.password);
+};
+
+// Method to update location
+DriverSchema.methods.updateLocation = async function(coordinates) {
+    this.location.coordinates = coordinates;
+    this.lastLocationUpdate = Date.now();
+    return this.save();
+};
 
 module.exports = mongoose.model('Driver', DriverSchema);

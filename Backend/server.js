@@ -12,7 +12,7 @@ const driverRoutes = require('./routes/driver');
 const adminRoutes = require('./routes/admin');
 const rideRequestRouter = require('./routes/RideRequestSchema'); 
 const contactRoute = require('./routes/contact'); 
-
+const paymentRoutes = require('./routes/Payment');
 
 dotenv.config();
 
@@ -45,6 +45,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 50000 
 })
 .then(() => console.log('Connected to MongoDB'))
 .catch((err) => console.error('Could not connect to MongoDB', err));
@@ -54,7 +55,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/driver', driverRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ride-request', rideRequestRouter);
-
+app.use('/api/payment', paymentRoutes);
 app.use('/api/user', authRoutes);
 app.use('/api/contact', contactRoute);  
 
