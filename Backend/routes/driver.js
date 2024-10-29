@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const Driver = require('../models/driver');
 const authMiddleware = require('../middleware/authMiddleware');
+const RideRequestSchema = require('../models/RideRequestSchema');
 
 // Define the upload directory
 const uploadDir = path.join(__dirname, '../uploads');
@@ -167,7 +168,7 @@ router.post('/update-availability', async (req, res) => {
 });
 
 
-// Route to get the total number of drivers
+//Route to get the total number of drivers
 router.get('/count', async (req, res) => {
     try {
       const driverCount = await Driver.countDocuments();
@@ -178,7 +179,71 @@ router.get('/count', async (req, res) => {
     }
   });
 
+//   // GET /api/driver/riderequests - Fetch all ride requests for a specific driver with matching vehicle type
+// router.get('/riderequests', async (req, res) => {
+//     try {
+//         const driverId = req.driverId;  // Assume driverId is added to the req object in driverCheck middleware
 
-module.exports = router;
+//         // Fetch the driver to get the vehicle type
+//         const driver = await DriverSchema.findById(driverId).select('vehicle');  // Assuming 'vehicle' is a field in the Driver schema
+//         if (!driver) {
+//             return res.status(404).json({ message: 'Driver not found' });
+//         }
 
+//         const driverVehicleType = driver.vehicle.type;  // Assuming 'vehicle' field contains an object with 'type' property
 
+//         // Define the time window (e.g., fetch ride requests created in the last 10 minutes)
+//         const timeWindow = 10 * 60 * 1000;  // 10 minutes in milliseconds
+//         const currentTime = new Date();
+//         const minTime = new Date(currentTime.getTime() - timeWindow);
+
+//         // Find ride requests with the same vehicle type and created within the last 10 minutes
+//         const rides = await RideRequestSchema.find({
+//             vehicleType: driverVehicleType,  // Match the ride request's vehicle type with the driver's vehicle type
+//             createdAt: { $gte: minTime }     // Filter by creation time (latest rides within the time window)
+//         })
+//             .populate('userId', 'name email')  // Populate user details
+//             .select('-__v');  // Exclude the __v field
+
+//         // Ensure pickup and dropoff are always present
+//         const ridesWithDefaultValues = rides.map((ride) => ({
+//             ...ride._doc,  // Spread the existing ride document
+//             pickup: ride.pickup || { address: 'Not provided' },  // Default pickup
+//             dropoff: ride.dropoff || { address: 'Not provided' }  // Default dropoff
+//         }));
+
+//         // Send the rides specific to the driver
+//         res.status(200).json(ridesWithDefaultValues);
+//     } catch (err) {
+//         console.error(err.message);
+//         res.status(500).send('Server error');
+//     }
+// });
+
+  
+// GET /api/driver/riderequests - Fetch all ride requests for a specific driver
+router.get('/riderequests', async (req, res) => {
+    try {
+        const driverId = req.driverId;  // Assume driverId is added to the req object in driverCheck middleware
+
+        // Find all ride requests assigned to the logged-in driver
+        const rides = await RideRequestSchema.find({ driverId })
+            .populate('userId', 'name email')  // Populate user details
+            .select('-__v');  // Exclude the __v field
+
+        // Ensure pickup and dropoff are always present
+        const ridesWithDefaultValues = rides.map((ride) => ({
+            ...ride._doc,  // Spread the existing ride document
+            pickup: ride.pickup || { address: 'Not provided' },  // Default pickup
+            dropoff: ride.dropoff || { address: 'Not provided' }  // Default dropoff
+        }));
+
+        // Send the rides specific to the driver
+        res.status(200).json(ridesWithDefaultValues);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server error');
+    }
+});
+
+  module.exports = router;
