@@ -25,9 +25,7 @@ const DriverSchema = new mongoose.Schema({
     },
     vehicleType: {
         type: String,
-        required: [true, 'Vehicle type is required'],
-        enum: ['car', 'van', 'motorbike', 'auto'],
-        lowercase: true
+        required: [true, 'Vehicle type is required']
     },
     licenseImage: {
         type: String,
@@ -53,34 +51,22 @@ const DriverSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    location: {
-        type: {
+    liveLocation: {
+        address: {
             type: String,
-            enum: ['Point'],
-            default: 'Point'
+            default: null
         },
         coordinates: {
-            type: [Number], // [longitude, latitude]
-            required: true,
-            default: [0, 0]
+            type: [Number],  // [longitude, latitude]
+            index: '2dsphere',  // Allows for geospatial queries
+            default: [null, null]  // Default to [null, null]
         }
-    },
-    socketId: {
-        type: String,
-        default: null
-    },
-    lastLocationUpdate: {
-        type: Date,
-        default: Date.now
     },
     createdAt: {
         type: Date,
         default: Date.now
     }
 });
-
-// Create geospatial index for location
-DriverSchema.index({ location: '2dsphere' });
 
 // Password hashing middleware
 DriverSchema.pre('save', async function(next) {
@@ -95,17 +81,5 @@ DriverSchema.pre('save', async function(next) {
         next(err);
     }
 });
-
-// Method to compare password
-DriverSchema.methods.comparePassword = async function(candidatePassword) {
-    return bcrypt.compare(candidatePassword, this.password);
-};
-
-// Method to update location
-DriverSchema.methods.updateLocation = async function(coordinates) {
-    this.location.coordinates = coordinates;
-    this.lastLocationUpdate = Date.now();
-    return this.save();
-};
 
 module.exports = mongoose.model('Driver', DriverSchema);
