@@ -8,6 +8,63 @@ const bcrypt = require('bcryptjs');
 const Driver = require('../models/driver');
 const authMiddleware = require('../middleware/authMiddleware');
 const RideRequest = require('../models/RideRequestSchema');
+const User = require('../models/User')
+
+
+
+router.post('/ride-requests/:token', async (req, res) => {
+    const { token } = req.params;
+
+    try {
+        // Verify the token and get driver ID
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const driverId = decoded.driver.id;
+        console.log(driverId);
+
+    
+        const driver = await Driver.findById(driverId);
+        if (!driver) {
+            return res.status(404).json({ message: 'Driver not found' });
+        }
+
+        const { vehicleType, location: liveLocation } = driver;
+
+        // Check the driver's location
+        console.log('Driver Location:', liveLocation.coordinates);
+
+        // Fetch all ride requests that match the driver's vehicle type
+        const rideRequests = await RideRequest.find({
+            vehicleType: vehicleType.toLowerCase(), 
+            status: 'pending' 
+        });
+
+        res.json({ nearbyRequest: rideRequests[rideRequests.length-1] });
+        
+    } catch (error) {
+        console.error('Error fetching ride requests:', error);
+        res.status(500).json({ message: 'Failed to fetch ride requests' });
+    }
+});
+
+
+
+//Find user
+router.get('/user/:userId', async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const user = await User.findById(userId); // Adjust according to your database structure
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      res.json(user);
+    } catch (error) {
+      console.error('Error fetching user details:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+});
+
+
+
 
 // Define the upload directory
 const uploadDir = path.join(__dirname, '../uploads');
@@ -26,6 +83,10 @@ const storage = multer.diskStorage({
         cb(null, Date.now() + '-' + file.originalname); // Customize the file name
     }
 });
+
+
+
+
 
 const upload = multer({ storage });
 
@@ -201,5 +262,60 @@ router.get('/profile', async (req, res) => {
     }
   });
 
+
+
+  // Route to update ride request status to "accepted"
+router.put('/accept/:rideRequestId', async (req, res) => {
+    const { rideRequestId } = req.params;
+
+    try {
+        // Find the ride request and update the status to "accepted"
+        const updatedRequest = await RideRequest.findByIdAndUpdate(
+            rideRequestId,
+            { status: 'accepted', acceptedAt: new Date() }, // Update status and set acceptedAt
+            { new: true } // Returns the updated document
+        );
+
+        if (!updatedRequest) {
+            return res.status(404).json({ message: 'Ride request not found' });
+        }
+
+        res.json({
+            message: 'Ride request status updated to accepted',
+            rideRequest: updatedRequest
+        });
+    } catch (error) {
+        console.error('Error updating ride request status:', error.message);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+
+
+//see accepted or not
+
+router.get('/ride-requests', async (req, res) => {
+    try {
+        // Retrieve all ride requests
+        const rideRequests = await RideRequest.find() 
+
+        if (rideRequests.length > 0) {
+            const firstRequest = rideRequests[rideRequests.length-1]; 
+            const isAccepted = firstRequest.status === 'accepted';  
+            if(isAccepted){
+                return res.json({ accepted: true}); 
+            }
+            return res.json({ accepted: false });
+           
+        } else {
+            return res.json({ accepted: false });
+        }
+    } catch (error) {
+        console.error('Error fetching ride requests:', error.message);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+  
+ 
 
  module.exports = router;
