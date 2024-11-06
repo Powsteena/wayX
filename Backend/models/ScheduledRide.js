@@ -1,8 +1,6 @@
-
-
 const mongoose = require('mongoose');
 
-const RideRequestSchema = new mongoose.Schema({
+const ScheduledRideSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
@@ -17,34 +15,12 @@ const RideRequestSchema = new mongoose.Schema({
         address: {
             type: String,
             required: true
-        },
-        coordinates: {
-            type: {
-                type: String,
-                enum: ['Point'],
-                default: 'Point'
-            },
-            coordinates: {
-                type: [Number], // [longitude, latitude]
-                required: true
-            }
         }
     },
     dropoff: {
         address: {
             type: String,
             required: true
-        },
-        coordinates: {
-            type: {
-                type: String,
-                enum: ['Point'],
-                default: 'Point'
-            },
-            coordinates: {
-                type: [Number], // [longitude, latitude]
-                required: true
-            }
         }
     },
     vehicleType: {
@@ -57,6 +33,10 @@ const RideRequestSchema = new mongoose.Schema({
         type: Number,
         required: true,
         min: 1
+    },
+    scheduledDateTime: {
+        type: Date,
+        required: true
     },
     status: {
         type: String,
@@ -81,8 +61,4 @@ const RideRequestSchema = new mongoose.Schema({
     }
 });
 
-// Create geospatial indexes
-RideRequestSchema.index({ 'pickup.coordinates': '2dsphere' });
-RideRequestSchema.index({ 'dropoff.coordinates': '2dsphere' });
-
-module.exports = mongoose.model('RideRequest', RideRequestSchema);
+module.exports = mongoose.model('ScheduledRide', ScheduledRideSchema);

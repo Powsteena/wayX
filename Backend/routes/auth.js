@@ -4,6 +4,7 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const authMiddleware = require('../middleware/authMiddleware'); 
+const ScheduledRide = require('../models/ScheduledRide')
 
 // POST /api/auth/register - Register a new user
 router.post('/register', async (req, res) => {
@@ -131,6 +132,35 @@ router.get('/count', async (req, res) => {
     } catch (error) {
         console.error('Error fetching user count:', error);
         res.status(500).json({ error: 'Failed to fetch user count' });
+    }
+});
+
+
+// Get rides created by the currently authenticated user
+router.get('/my-rides', authMiddleware, async (req, res) => {
+    try {
+        // Fetch rides filtered by the authenticated user's userId
+        const rides = await ScheduledRide.find({ userId: req.userId })
+            .populate('userId', 'name email')  // Populate user details
+            .populate('driverId', 'name vehicle')  // Populate driver details
+            .select('-__v');  // Optionally exclude the __v field
+        
+        // Check if rides are found
+        if (rides.length === 0) {
+            return res.status(404).json({ msg: 'No rides found for this user' });
+        }
+
+        // Ensure pickup and dropoff are always present, even if empty
+        const ridesWithDefaultValues = rides.map((ride) => ({
+            ...ride._doc,
+            pickup: ride.pickup || { address: 'Not provided' },
+            dropoff: ride.dropoff || { address: 'Not provided' }
+        }));
+
+        res.json(ridesWithDefaultValues);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server error');
     }
 });
 

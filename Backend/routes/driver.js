@@ -7,47 +7,135 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const Driver = require('../models/driver');
 const authMiddleware = require('../middleware/authMiddleware');
-const RideRequest = require('../models/RideRequestSchema');
+const RideRequest = require('../models/ScheduledRide');
 const User = require('../models/User')
+const Payment = require('../models/Payment')
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY); // Load your Stripe secret key
 
 
 
-router.post('/ride-requests/:token', async (req, res) => {
+
+// router.post('/ride-requests/:token', async (req, res) => {
+//     const { token } = req.params;
+
+//     try {
+//         // Verify the token and get driver ID
+//         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+//         const driverId = decoded.driver.id;
+//         console.log(driverId);
+
+    
+//         const driver = await Driver.findById(driverId);
+//         if (!driver) {
+//             return res.status(404).json({ message: 'Driver not found' });
+//         }
+
+//         const { vehicleType, location: liveLocation } = driver;
+
+//         // Check the driver's location
+//         console.log('Driver Location:', liveLocation.coordinates);
+
+//         // Fetch all ride requests that match the driver's vehicle type
+//         const rideRequests = await RideRequest.find({
+//             vehicleType: vehicleType.toLowerCase(), 
+//             status: 'pending' 
+//         });
+
+//         res.json({ nearbyRequest: rideRequests[rideRequests.length-1] });
+        
+//     } catch (error) {
+//         console.error('Error fetching ride requests:', error);
+//         res.status(500).json({ message: 'Failed to fetch ride requests' });
+//     }
+// });
+
+
+const mongoose = require('mongoose');
+const haversine = require('haversine-distance'); // Install this package for distance calculation
+// Ride Requests Route: Fetch the latest ride request that matches the vehicle type, status, and proximity
+router.get('/ride-requests/:token', async (req, res) => {
     const { token } = req.params;
 
     try {
-        // Verify the token and get driver ID
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const driverId = decoded.driver.id;
-        console.log(driverId);
+        if (!token) {
+            console.log('No token provided');
+            return res.status(400).json({ message: 'Token is required' });
+        }
 
-    
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const driverId = decoded.driver.id; // Access the driver's ID from the decoded token
+
+        // Find the driver in the database
         const driver = await Driver.findById(driverId);
         if (!driver) {
             return res.status(404).json({ message: 'Driver not found' });
         }
+        console.log('Driver data:', driver);
+        const { vehicleType, liveLocation } = driver;
 
-        const { vehicleType, location: liveLocation } = driver;
-
-        // Check the driver's location
-        console.log('Driver Location:', liveLocation.coordinates);
-
-        // Fetch all ride requests that match the driver's vehicle type
+        // Fetch all pending ride requests that match the driver's vehicle type
         const rideRequests = await RideRequest.find({
-            vehicleType: vehicleType.toLowerCase(), 
-            status: 'pending' 
+            vehicleType: vehicleType.toLowerCase(),
+            status: 'pending'
+        }).sort({ createdAt: -1 }); // Sorting by latest request
+
+        // Filter nearby requests using Google Maps Distance Matrix API
+        const nearbyRequestsPromises = rideRequests.map(async (request) => {
+            if (request.pickupLocation && liveLocation) {
+                const driverLocation = `${liveLocation.coordinates[1]},${liveLocation.coordinates[0]}`;
+                const pickupLocation = `${request.pickupLocation.coordinates[1]},${request.pickupLocation.coordinates[0]}`;
+
+                // Call Google Distance Matrix API
+                const options = {
+                    method: 'GET',
+                    url: 'https://google-map-places.p.rapidapi.com/maps/api/distancematrix/json',
+                    params: {
+                        origins: driverLocation,
+                        destinations: pickupLocation,
+                        mode: 'driving',
+                        units: 'metric',
+                    },
+                    headers: {
+                        'x-rapidapi-key': '962111a97cmshe5fa71b93e2a226p128708jsn2f0b2b4e19e8',
+                        'x-rapidapi-host': 'google-map-places.p.rapidapi.com'
+                    }
+                };
+
+                try {
+                    const response = await axios.request(options);
+                    const distanceData = response.data.rows[0].elements[0];
+
+                    if (distanceData.status === 'OK') {
+                        const distanceInMeters = distanceData.distance.value;
+                        console.log(`Distance to request: ${distanceInMeters} meters`);
+                        return distanceInMeters <= 5000 ? request : null; // Distance threshold of 5 km
+                    } else {
+                        console.log('Error fetching distance from Google Maps API:', distanceData.status);
+                    }
+                } catch (error) {
+                    console.error('Error fetching distance from Google Maps API:', error.message);
+                }
+            }
+            return null;
         });
 
-        res.json({ nearbyRequest: rideRequests[rideRequests.length-1] });
-        
+        const nearbyRequests = (await Promise.all(nearbyRequestsPromises)).filter(Boolean);
+
+        // Get the latest nearby request, if any
+        const latestNearbyRequest = nearbyRequests.length > 0 ? nearbyRequests[0] : null;
+
+        // Check if the latest request is accepted
+        const isAccepted = latestNearbyRequest ? latestNearbyRequest.status === 'accepted' : false;
+
+        res.json({
+            accepted: isAccepted,
+            nearbyRequest: latestNearbyRequest
+        });
     } catch (error) {
-        console.error('Error fetching ride requests:', error);
-        res.status(500).json({ message: 'Failed to fetch ride requests' });
+        console.error('Error fetching ride requests:', error.message);
+        res.status(500).json({ message: 'Server error' });
     }
 });
-
-
-
 //Find user
 router.get('/user/:userId', async (req, res) => {
     try {
@@ -291,30 +379,127 @@ router.put('/accept/:rideRequestId', async (req, res) => {
 });
 
 
+// Create Payment Intent Route
+
+router.post('/create-payment-intent', async (req, res) => {
+    try {
+      const { driverId, amount, currency } = req.body;
+  
+      if (!driverId || !amount || !currency) {
+        return res.status(400).json({ 
+          message: 'Missing required fields: driverId, amount, and currency are required' 
+        });
+      }
+  
+      // Create payment record first
+      const payment = new Payment({
+        driverId,
+        amount,
+        currency,
+        status: 'pending'
+      });
+      await payment.save();
+  
+      // Create Stripe PaymentIntent
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount,
+        currency,
+        metadata: {
+          driverId,
+          paymentId: payment._id.toString()
+        }
+      });
+  
+      // Update payment record with Stripe ID
+      payment.stripePaymentIntentId = paymentIntent.id;
+      await payment.save();
+  
+      res.json({
+        clientSecret: paymentIntent.client_secret,
+        paymentId: payment._id
+      });
+    } catch (error) {
+      console.error('Payment intent creation error:', error);
+      res.status(500).json({ 
+        message: 'Failed to create payment intent',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  });
+  
+ 
+router.post('/payment-success', async (req, res) => {
+    try {
+      const { paymentId, transactionId, driverId } = req.body;
+      
+      if (!paymentId || !transactionId || !driverId) {
+        return res.status(400).json({ 
+          message: 'Missing required fields: paymentId, transactionId, and driverId are required' 
+        });
+      }
+  
+      // Find the payment by ID
+      const payment = await Payment.findById(paymentId);
+      if (!payment) {
+        return res.status(404).json({ message: 'Payment not found' });
+      }
+  
+      // Ensure that the driver ID matches the payment's driverId
+      if (payment.driverId.toString() !== driverId) {
+        return res.status(403).json({ message: 'Unauthorized access to payment' });
+      }
+  
+      // Update the payment status to 'completed'
+      payment.status = 'completed';
+      payment.transactionId = transactionId;
+      await payment.save();
+  
+      // Now update the driver's hasPaid status to true
+      const driver = await Driver.findById(driverId);
+      if (!driver) {
+        return res.status(404).json({ message: 'Driver not found' });
+      }
+  
+      driver.hasPaid = true; // Update the driver's hasPaid status
+      await driver.save();
+  
+      res.json({ 
+        message: 'Payment updated successfully and driver\'s hasPaid status updated' 
+      });
+    } catch (error) {
+      console.error('Payment success update error:', error);
+      res.status(500).json({ 
+        message: 'Failed to update payment and driver status'
+      });
+    }
+  });
+  
+  
+
 
 //see accepted or not
 
-router.get('/ride-requests', async (req, res) => {
-    try {
-        // Retrieve all ride requests
-        const rideRequests = await RideRequest.find() 
+// router.get('/ride-requests', async (req, res) => {
+//     try {
+//         // Retrieve all ride requests
+//         const rideRequests = await RideRequest.find() 
 
-        if (rideRequests.length > 0) {
-            const firstRequest = rideRequests[rideRequests.length-1]; 
-            const isAccepted = firstRequest.status === 'accepted';  
-            if(isAccepted){
-                return res.json({ accepted: true}); 
-            }
-            return res.json({ accepted: false });
+//         if (rideRequests.length > 0) {
+//             const firstRequest = rideRequests[rideRequests.length-1]; 
+//             const isAccepted = firstRequest.status === 'accepted';  
+//             if(isAccepted){
+//                 return res.json({ accepted: true}); 
+//             }
+//             return res.json({ accepted: false });
            
-        } else {
-            return res.json({ accepted: false });
-        }
-    } catch (error) {
-        console.error('Error fetching ride requests:', error.message);
-        res.status(500).json({ message: 'Server error' });
-    }
-});
+//         } else {
+//             return res.json({ accepted: false });
+//         }
+//     } catch (error) {
+//         console.error('Error fetching ride requests:', error.message);
+//         res.status(500).json({ message: 'Server error' });
+//     }
+// });
   
  
 

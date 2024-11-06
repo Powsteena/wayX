@@ -83,6 +83,8 @@
 // });
 
 // module.exports = mongoose.model('Driver', DriverSchema);
+
+
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -159,7 +161,11 @@ const DriverSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now
-    }
+    },
+    hasPaid: {
+        type: Boolean,
+        default: false, // Set default to false
+      }
 });
 
 // Create geospatial index for location

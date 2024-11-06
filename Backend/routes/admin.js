@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const Driver = require('../models/driver')
-const RideRequestSchema = require('../models/RideRequestSchema')
+const ScheduledRide = require('../models/ScheduledRide');
 const authMiddleware = require('../middleware/authMiddleware');
 const bcrypt = require('bcryptjs');
 
@@ -236,16 +236,23 @@ router.delete('/driver/:id', adminCheck, async (req, res) => {
     }
 });
 
-
-// GET /api/admin/riderequests - Fetch all ride requests (requires admin role)
+// Get all rides
 router.get('/rides', adminCheck, async (req, res) => {
     try {
-        const rides = await RideRequestSchema.find()
-            .populate('userId', 'name email')  // Populate user details (e.g., name and email)
-            .populate('driverId', 'name vehicle')  // Populate driver details (e.g., name and vehicle info)
-            .select('-__v');  // Optionally exclude the __v field added by Mongoose
+        const rides = await ScheduledRide.find()
+            .populate({
+                path: 'userId',
+                select: 'username name email' // Include all fields you might need
+            })
+            .populate({
+                path: 'driverId',
+                select: 'username vehicle name'
+            })
+            .select('-__v');
 
-        // Ensure pickup and dropoff are always present, even if empty
+        // Add debugging log
+        console.log('Populated rides:', JSON.stringify(rides, null, 2));
+
         const ridesWithDefaultValues = rides.map((ride) => ({
             ...ride._doc,
             pickup: ride.pickup || { address: 'Not provided' },
@@ -254,12 +261,9 @@ router.get('/rides', adminCheck, async (req, res) => {
 
         res.json(ridesWithDefaultValues);
     } catch (err) {
-        console.error(err.message);
+        console.error('Error in /rides endpoint:', err);
         res.status(500).send('Server error');
     }
 });
-
-
-
 
 module.exports = router;

@@ -10,9 +10,8 @@ const { Server } = require('socket.io');
 const authRoutes = require('./routes/auth');
 const driverRoutes = require('./routes/driver');
 const adminRoutes = require('./routes/admin');
-const rideRequestRouter = require('./routes/RideRequestSchema'); 
+const ScheduledRideRoutes = require('./routes/ScheduledRide'); 
 const contactRoute = require('./routes/contact'); 
-const paymentRoutes = require('./routes/Payment');
 
 dotenv.config();
 
@@ -54,8 +53,7 @@ mongoose.connect(process.env.MONGO_URI, {
 app.use('/api/auth', authRoutes);
 app.use('/api/driver', driverRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/ride-request', rideRequestRouter);
-app.use('/api/payment', paymentRoutes);
+app.use('/api/rides', ScheduledRideRoutes);
 app.use('/api/user', authRoutes);
 app.use('/api/contact', contactRoute);  
 
