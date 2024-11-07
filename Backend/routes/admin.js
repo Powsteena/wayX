@@ -200,7 +200,7 @@ router.patch('/driver/:id/reject', adminCheck, async (req, res) => {
 
 // PATCH /api/admin/driver/:id - Update driver details (requires admin role)
 router.patch('/driver/:id', adminCheck, async (req, res) => {
-    const { username, email, vehicleType, licenseNumber } = req.body;
+    const { username, email, vehicleType, phoneNumber } = req.body;
 
     try {
         const driver = await Driver.findById(req.params.id);
@@ -211,7 +211,7 @@ router.patch('/driver/:id', adminCheck, async (req, res) => {
         if (username) driver.username = username;
         if (email) driver.email = email;
         if (vehicleType) driver.vehicleType = vehicleType;
-        if (licenseNumber) driver.licenseNumber = licenseNumber;
+        if (phoneNumber) driver.phoneNumber = phoneNumber;
 
         await driver.save();
         res.json(driver);

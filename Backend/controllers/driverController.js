@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 
 // Driver Registration
 exports.registerDriver = async (req, res) => {
-    const { username, email, password, vehicleType, licenseNumber } = req.body;
+    const { username, email, password, vehicleType, phoneNumber } = req.body;
     const { licenseImage, vehicleRegistration, insuranceDocument } = req.files || {}; // Ensure req.files exists
 
     // Check if all required files are uploaded
@@ -24,7 +24,7 @@ exports.registerDriver = async (req, res) => {
             email,
             password,
             vehicleType,
-            licenseNumber,
+            phoneNumber,
             licenseImage: licenseImage[0]?.path, // Handle file paths properly
             vehicleRegistration: vehicleRegistration[0]?.path,
             insuranceDocument: insuranceDocument[0]?.path
@@ -121,7 +121,7 @@ exports.getDriver = async (req, res) => {
 
 // Update Driver Profile
 exports.updateDriver = async (req, res) => {
-    const { username, email, password, vehicleType, licenseNumber } = req.body;
+    const { username, email, password, vehicleType, phoneNumber } = req.body;
     const { licenseImage, vehicleRegistration, insuranceDocument } = req.files || {}; // Ensure req.files exists
 
     try {
@@ -140,7 +140,7 @@ exports.updateDriver = async (req, res) => {
         }
         if (password) driver.password = await bcrypt.hash(password, 10);
         if (vehicleType) driver.vehicleType = vehicleType;
-        if (licenseNumber) driver.licenseNumber = licenseNumber;
+        if (phoneNumber) driver.phoneNumber = phoneNumber;
         if (licenseImage) driver.licenseImage = licenseImage[0]?.path;
         if (vehicleRegistration) driver.vehicleRegistration = vehicleRegistration[0]?.path;
         if (insuranceDocument) driver.insuranceDocument = insuranceDocument[0]?.path;

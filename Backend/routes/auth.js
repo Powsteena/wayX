@@ -137,14 +137,28 @@ router.get('/count', async (req, res) => {
 
 
 // Get rides created by the currently authenticated user
-router.get('/my-rides', authMiddleware, async (req, res) => {
+
+router.get('/my-rides', async (req, res) => {
     try {
+        // Get the token from the request headers
+        const token = req.header('Authorization').replace('Bearer ', '');
+        
+        if (!token) {
+            return res.status(401).json({ msg: 'No token, authorization denied' });
+        }
+
+        // Decode the token
+        const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+        
+        // Attach the userId from the decoded token
+        const userId = decodedToken.user.id;
+
         // Fetch rides filtered by the authenticated user's userId
-        const rides = await ScheduledRide.find({ userId: req.userId })
+        const rides = await ScheduledRide.find({ userId })
             .populate('userId', 'name email')  // Populate user details
             .populate('driverId', 'name vehicle')  // Populate driver details
             .select('-__v');  // Optionally exclude the __v field
-        
+
         // Check if rides are found
         if (rides.length === 0) {
             return res.status(404).json({ msg: 'No rides found for this user' });
@@ -157,11 +171,75 @@ router.get('/my-rides', authMiddleware, async (req, res) => {
             dropoff: ride.dropoff || { address: 'Not provided' }
         }));
 
+        // Return the rides to the client
         res.json(ridesWithDefaultValues);
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server error');
     }
 });
+router.get('/my-acceptedrides', async (req, res) => {
+    try {
+        // Check if Authorization header exists
+        const authHeader = req.header('Authorization');
+        if (!authHeader) {
+            return res.status(401).json({ 
+                success: false, 
+                message: 'No authorization header found' 
+            });
+        }
+
+        // Get and verify token
+        const token = authHeader.replace('Bearer ', '');
+        if (!token) {
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Authorization token is required' 
+            });
+        }
+
+        // Verify token and get user data
+        let decodedToken;
+        try {
+            decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+        } catch (err) {
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Invalid or expired token' 
+            });
+        }
+
+        const userId = decodedToken.user.id;
+
+        // Fetch rides with proper error handling
+        const rides = await ScheduledRide.find({ 
+            userId,
+            status: 'accepted'
+        })
+        .populate('userId', 'name email')
+        .populate('driverId', 'name vehicle')
+        .select('-__v')
+        .lean(); // Use lean() for better performance
+
+        // Process and return the rides
+        const processedRides = rides.map(ride => ({
+            ...ride,
+            pickup: ride.pickup || { address: 'Not provided' },
+            dropoff: ride.dropoff || { address: 'Not provided' },
+            driverId: ride.driverId || { name: 'Not assigned', vehicle: 'Not assigned' }
+        }));
+
+        return res.status(200).json(processedRides);
+
+    } catch (err) {
+        console.error('Server error:', err);
+        return res.status(500).json({ 
+            success: false, 
+            message: 'Internal server error',
+            error: process.env.NODE_ENV === 'development' ? err.message : undefined
+        });
+    }
+});
+
 
 module.exports = router;
