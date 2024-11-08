@@ -3,7 +3,8 @@ const router = express.Router();
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const authMiddleware = require('../middleware/authMiddleware'); 
+const authMiddleware = require('../middleware/authMiddleware');
+const Driver = require('../models/driver'); 
 const ScheduledRide = require('../models/ScheduledRide')
 
 // POST /api/auth/register - Register a new user
@@ -180,64 +181,62 @@ router.get('/my-rides', async (req, res) => {
 });
 router.get('/my-acceptedrides', async (req, res) => {
     try {
-        // Check if Authorization header exists
+        // Check for the authorization header
         const authHeader = req.header('Authorization');
         if (!authHeader) {
-            return res.status(401).json({ 
-                success: false, 
-                message: 'No authorization header found' 
-            });
+            return res.status(401).json({ success: false, message: 'No authorization header found' });
         }
 
-        // Get and verify token
+        // Verify token
         const token = authHeader.replace('Bearer ', '');
         if (!token) {
-            return res.status(401).json({ 
-                success: false, 
-                message: 'Authorization token is required' 
-            });
+            return res.status(401).json({ success: false, message: 'Authorization token is required' });
         }
 
-        // Verify token and get user data
         let decodedToken;
         try {
             decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+            console.log(decodedToken);  // Inspect the decoded token
         } catch (err) {
-            return res.status(401).json({ 
-                success: false, 
-                message: 'Invalid or expired token' 
-            });
+            return res.status(401).json({ success: false, message: 'Invalid or expired token' });
         }
 
-        const userId = decodedToken.user.id;
+        // Use appropriate field from the decoded token
+        const userId = decodedToken.user?.id || decodedToken.id;  // Adjust this based on your JWT payload
 
-        // Fetch rides with proper error handling
-        const rides = await ScheduledRide.find({ 
-            userId,
-            status: 'accepted'
-        })
-        .populate('userId', 'name email')
-        .populate('driverId', 'name vehicle')
-        .select('-__v')
-        .lean(); // Use lean() for better performance
+        if (!userId) {
+            return res.status(400).json({ success: false, message: 'User ID not found in token' });
+        }
 
-        // Process and return the rides
+        // Fetch rides with populated driver details
+        const rides = await ScheduledRide.find({ userId, status: 'accepted' })
+            .populate('userId', 'name email')  // Populate user info
+            .populate('driverId', 'username vehicleType vehicleNumber phoneNumber')  // Populate driver details
+            .select('-__v')  // Exclude unwanted fields
+            .lean();  // Use lean for plain JS objects
+
+        if (!rides || rides.length === 0) {
+            return res.status(404).json({ success: false, message: 'No accepted rides found' });
+        }
+
+        // Process rides data
         const processedRides = rides.map(ride => ({
             ...ride,
             pickup: ride.pickup || { address: 'Not provided' },
             dropoff: ride.dropoff || { address: 'Not provided' },
-            driverId: ride.driverId || { name: 'Not assigned', vehicle: 'Not assigned' }
+            driverId: ride.driverId || {
+                name: 'Not assigned',
+                vehicleType: 'Not provided',
+                vehicleNumber: 'Not provided',
+                phoneNumber: 'Not provided',
+            },
+            scheduledDateTime: ride.scheduledDateTime || new Date(),
         }));
 
         return res.status(200).json(processedRides);
-
     } catch (err) {
         console.error('Server error:', err);
-        return res.status(500).json({ 
-            success: false, 
-            message: 'Internal server error',
-            error: process.env.NODE_ENV === 'development' ? err.message : undefined
-        });
+        return res.status(500).json({ success: false, message: 'Internal server error', error: err.message });
     }
 });
 
