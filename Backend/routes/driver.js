@@ -383,4 +383,45 @@ router.patch('/accept-ride/:rideId', async (req, res) => {
   }
 });
 
+
+// Fetch rides accepted by the logged-in driver
+router.get('/acceptedrides', async (req, res) => {
+  try {
+    const token = req.header('Authorization').replace('Bearer ', '');
+    
+    if (!token) {
+        return res.status(401).json({ msg: 'No token, authorization denied' });
+    }
+
+    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+    const driverId = decodedToken.driver.id; // Assuming the driver ID is stored in decoded token
+
+    const driver = await Driver.findById(driverId);
+    if (!driver) {
+        return res.status(404).json({ msg: 'Driver not found' });
+    }
+
+    // Fetch the rides where the driver has been assigned and status is accepted
+    const acceptedRides = await ScheduledRide.find({
+        driverId: driverId,      // Driver ID should match
+        status: 'accepted'       // The ride's status must be 'accepted'
+    })
+    .populate({
+        path: 'userId',
+        select: 'name username' // Include both name and username from the user model
+    })
+    .select('-__v'); // Exclude version key from the result
+
+    // Check if there are no accepted rides
+    if (acceptedRides.length === 0) {
+        return res.status(404).json({ msg: 'No accepted rides found for this driver' });
+    }
+
+    res.json(acceptedRides);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
  module.exports = router;
