@@ -207,7 +207,6 @@ router.get('/profile', async (req, res) => {
 
 
 // Create Payment Intent Route
-
 router.post('/create-payment-intent', async (req, res) => {
     try {
       const { driverId, amount, currency } = req.body;
@@ -303,14 +302,13 @@ router.post('/payment-success', async (req, res) => {
   
 
 
-
 // get matching rides
 router.get('/scheduledrides', async (req, res) => {
   try {
     const token = req.header('Authorization').replace('Bearer ', '');
-    
+
     if (!token) {
-        return res.status(401).json({ msg: 'No token, authorization denied' });
+      return res.status(401).json({ msg: 'No token, authorization denied' });
     }
 
     const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
@@ -318,31 +316,34 @@ router.get('/scheduledrides', async (req, res) => {
 
     const driver = await Driver.findById(driverId);
     if (!driver) {
-        return res.status(404).json({ msg: 'Driver not found' });
+      return res.status(404).json({ msg: 'Driver not found' });
     }
 
     const driverVehicleType = driver.vehicleType;
 
-    // Updated populate to include both name and username fields
+    // Get the current date and time
+    const currentTime = new Date();
+
     const matchingRides = await ScheduledRide.find({
-        vehicleType: driverVehicleType,
-        status: 'pending' 
+      vehicleType: driverVehicleType,
+      status: 'pending',
+      scheduledDateTime: { $gt: currentTime } // Filter for future rides
     })
-        .populate({
-            path: 'userId',
-            select: 'name username' // Include both name and username
-        })
-        .select('-__v'); 
+      .populate({
+        path: 'userId',
+        select: 'name username' // Include both name and username
+      })
+      .select('-__v');
 
     if (matchingRides.length === 0) {
-        return res.status(404).json({ msg: 'No matching rides found' });
+      return res.status(404).json({ msg: 'No matching rides found' });
     }
 
     res.json(matchingRides);
-} catch (err) {
+  } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');
-}
+  }
 });
 
 

@@ -5,6 +5,7 @@ const Driver = require('../models/driver')
 const ScheduledRide = require('../models/ScheduledRide');
 const authMiddleware = require('../middleware/authMiddleware');
 const bcrypt = require('bcryptjs');
+const Contact = require('../models/contact');
 
 // Apply authMiddleware to all routes
 router.use(authMiddleware);
@@ -265,5 +266,28 @@ router.get('/rides', adminCheck, async (req, res) => {
         res.status(500).send('Server error');
     }
 });
+
+
+// fetch all contact msges 
+router.get('/get/contact', adminCheck, async (req, res) => {
+    try {
+        // Fetch all contacts sorted by creation date in descending order
+        const contacts = await Contact.find();
+
+        res.json({
+            success: true,
+            count: contacts.length,
+            data: contacts,
+        });
+    } catch (error) {
+        console.error('Error fetching contacts:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching contacts',
+            error: error.message,
+        });
+    }
+});
+
 
 module.exports = router;

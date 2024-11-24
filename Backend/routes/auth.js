@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
 const authMiddleware = require('../middleware/authMiddleware');
 const Driver = require('../models/driver'); 
 const ScheduledRide = require('../models/ScheduledRide')
+const Contact = require('../models/contact')
 
 // POST /api/auth/register - Register a new user
 router.post('/register', async (req, res) => {
@@ -179,6 +180,9 @@ router.get('/my-rides', async (req, res) => {
         res.status(500).send('Server error');
     }
 });
+
+
+
 router.get('/my-acceptedrides', async (req, res) => {
     try {
         // Check for the authorization header
@@ -239,6 +243,47 @@ router.get('/my-acceptedrides', async (req, res) => {
         return res.status(500).json({ success: false, message: 'Internal server error', error: err.message });
     }
 });
+
+router.post('/contact', async (req, res) => {
+    try {
+        console.log('Received data:', req.body);
+
+        const { fullName, email, subject, message } = req.body;
+
+        // Validate input
+        if (!fullName || !email || !subject || !message) {
+            return res.status(400).json({
+                success: false,
+                message: 'All fields are required'
+            });
+        }
+
+        // Create and save contact
+        const contact = new Contact({
+            fullName,
+            email,
+            subject,
+            message
+        });
+
+        await contact.save(); // Save the document to the database
+
+        res.status(201).json({
+            success: true,
+            message: 'Contact created successfully',
+            data: contact
+        });
+
+    } catch (error) {
+        console.error('Error creating contact:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error creating contact',
+            error: error.message
+        });
+    }
+});
+
 
 
 module.exports = router;
