@@ -1,0 +1,35 @@
+:root {
+    --primary-color: #530C0C;
+    --secondary-color: #F7F6DE;
+    --accent-color: #FA7E0A;
+    --text-color: #333;
+}
+.form-container {
+    max-width: 600px;
+    width: 100%;
+  }
+  
+  .form-group label {
+    font-weight: bold;
+  }
+  
+  .btn-primary {
+    background-color: var(--accent-color);
+  }
+  
+  .text-dark {
+    color: #530C0C;
+  }
+  
+  .text-primary {
+    color: #007bff;
+  }
+  
+  .text-danger {
+    color: #dc3545;
+  }
+  
+  .text-success {
+    color: #28a745;
+  }
+  

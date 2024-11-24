@@ -1,0 +1,26 @@
+/* src/CSS/FormStyle.css */
+.form-container {
+  max-width: 400px;
+}
+
+.text-dark-red {
+  color: #8F0E0E;
+}
+
+.text-orange {
+  color: #FA7E0A;
+  text-decoration: none;
+}
+
+.btn {
+  background-color: #FA7E0A;
+  color: #fff;
+  border-color: #8F0E0E ;
+}
+.h1,h2{
+  font-weight: 1000;
+  color: #FA7E0A;
+ }
+ .form-container h2 {
+  color: #FA7E0A;
+}
