@@ -98,7 +98,7 @@ const ManageContacts = () => {
 
       <div className="grid gap-4">
         {contacts.length === 0 ? (
-          <div className="text-center py-8 text-gray-400 bg-gray-900 rounded-lg">
+          <div className="text-center py-8 text-gray-400 bg-black/70 rounded-lg">
             <Mail className="w-12 h-12 mx-auto mb-4 opacity-50" />
             <p>No contact submissions yet</p>
           </div>
@@ -106,7 +106,7 @@ const ManageContacts = () => {
           contacts.map((contact) => (
             <div
               key={contact._id}
-              className="bg-gray-900 rounded-lg p-6 hover:bg-gray-800 transition-colors border border-gray-800"
+              className="bg-black/70 rounded-lg p-6 hover:bg-yellow-600/5 transition-colors border border-gray-800"
             >
               <div className="flex justify-between items-start">
                 <div className="space-y-2 w-full pr-8">
@@ -114,16 +114,16 @@ const ManageContacts = () => {
                     <h3 className="text-lg font-semibold text-white">
                       {contact.name}
                     </h3>
-                    <p className="text-sm text-gray-500">
+                    {/* <p className="text-sm text-gray-500">
                       {new Date(contact.createdAt).toLocaleDateString()} {new Date(contact.createdAt).toLocaleTimeString()}
-                    </p>
+                    </p> */}
                   </div>
                   <div className="flex items-center gap-2">
                     <Mail size={16} className="text-yellow-600" />
                     <p className="text-yellow-600">{contact.email}</p>
                   </div>
                   <p className="text-gray-400">{contact.phone}</p>
-                  <div className="mt-4 p-3 bg-gray-800 rounded-lg">
+                  <div className="mt-4 p-3 bg-black/70 rounded-lg">
                     <p className="text-gray-300 whitespace-pre-wrap">{contact.message}</p>
                   </div>
                   <div className="flex justify-between items-center mt-4">

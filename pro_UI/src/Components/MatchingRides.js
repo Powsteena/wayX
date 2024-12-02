@@ -162,7 +162,7 @@ const MatchingRides = ({ onRideCountChange }) => {
     };
 
     return (
-        <div className="w-full max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+        <div className="w-full max-w-6xl mx-auto bg-gray-300 rounded-xl shadow-lg overflow-hidden">
             <div className="p-8">
                 <h2 className="text-3xl font-extrabold text-black mb-6">Rides</h2>
                 {rides.length > 0 ? (
@@ -178,7 +178,7 @@ const MatchingRides = ({ onRideCountChange }) => {
                                     <th className="px-6 py-4 text-left text-sm font-medium">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody className="bg-gray-400 divide-y divide-gray-200">
                                 {rides.map((ride) => (
                                     <tr key={ride._id} className="hover:bg-gray-100">
                                         <td className="px-6 py-4 text-black">{ride.userId?.username || ride.userId?.name || 'N/A'}</td>

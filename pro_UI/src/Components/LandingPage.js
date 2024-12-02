@@ -163,65 +163,97 @@ const LandingPage = () => {
       {/* Navbar - Now with gradient and glass effect */}
       {/* <nav className="fixed w-full z-50 bg-gradient-to-r from-yellow-600/10 to-orange-500/10 backdrop-blur-md border-b border-white/10"> */}
       <nav className="bg-white backdrop-blur-sm fixed w-full shadow-lg z-50">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center h-20">
-            <a href="/" className="flex items-center">
-              <img src={logo} alt="Logo" className="h-12" />
-            </a>
+  <div className="container mx-auto px-4">
+    <div className="flex justify-between items-center h-20">
+      {/* Logo on the left */}
+      <a href="/" className="flex items-center">
+        <img src={logo} alt="Logo" className="h-12" />
+      </a>
 
-            <div className="hidden lg:flex items-center justify-center space-x-8">
-              {navItems.map((item) => (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  className="text-gray-800 hover:text-yellow-600 flex items-center space-x-2 transition-colors duration-200 font-medium relative group"
-                >
-                  {item.icon}
-                  <span>{item.label}</span>
-                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-yellow-600 transition-all duration-300"></span>
-                </a>
-              ))}
-              <a
-                onClick={openLoginModal}
-                className="bg-yellow-600 text-white px-2 py-2 rounded-full flex items-center  space-x-2 hover:from-yellow-600 transition-all duration-300 transform hover:scale-105 font-medium cursor-pointer"
-              >
-                <LogIn size={20} />
-                <span>Login</span>
-              </a>
-            </div>
+      {/* Navigation items in the center for large screens */}
+      <div className="hidden lg:flex items-center justify-center space-x-8 absolute left-1/2 transform -translate-x-1/2">
+        <a
+          href="/"
+          className="text-gray-800 hover:text-yellow-600 flex items-center space-x-2 transition-colors duration-200 font-medium relative group"
+        >
+          <span>Home</span>
+        </a>
+        <a
+          href="/services"
+          className="text-gray-800 hover:text-yellow-600 flex items-center space-x-2 transition-colors duration-200 font-medium relative group"
+        >
+          <span>Services</span>
+        </a>
+        <a
+          href="/about"
+          className="text-gray-800 hover:text-yellow-600 flex items-center space-x-2 transition-colors duration-200 font-medium relative group"
+        >
+          <span>About</span>
+        </a>
+        <a
+          href="/contact"
+          className="text-gray-800 hover:text-yellow-600 flex items-center space-x-2 transition-colors duration-200 font-medium relative group"
+        >
+          <span>Contact</span>
+        </a>
+      </div>
 
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="lg:hidden text-gray-800 hover:text-yellow-600"
-            >
-              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </div>
+      {/* Login button on the right */}
+      <a
+        onClick={openLoginModal}
+        className="hidden lg:flex bg-yellow-600 text-white px-4 py-2 rounded-full items-center space-x-2 hover:bg-yellow-700 transition-all duration-300 transform hover:scale-105 font-medium cursor-pointer"
+      >
+        <LogIn size={20} />
+        <span>Login</span>
+      </a>
 
-          {/* Mobile menu with gradient background */}
-          {isMenuOpen && (
-            <div className="lg:hidden py-4 border-t border-white/10 bg-gradient-to-b from-yellow-50 to-orange-50">
-              {navItems.map((item) => (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  className="text-gray-800 hover:text-yellow-600 flex items-center space-x-2 py-3 px-4 transition-colors duration-200"
-                >
-                  {item.icon}
-                  <span>{item.label}</span>
-                </a>
-              ))}
-              <a
-                href="/login"
-                className="bg-gradient-to-r from-yellow-600 to-orange-500 text-white mx-4 mt-4 px-2 py-1 rounded-full flex items-center space-x-2 justify-center hover:from-yellow-600 hover:to-orange-600 transition-all duration-300"
-              >
-                <LogIn size={20} />
-                <span>Login</span>
-              </a>
-            </div>
-          )}
-        </div>
-      </nav>
+      {/* Mobile menu toggle */}
+      <button
+        onClick={() => setIsMenuOpen(!isMenuOpen)}
+        className="lg:hidden text-gray-800 hover:text-yellow-600"
+      >
+        {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+      </button>
+    </div>
+
+    {/* Mobile menu */}
+    {isMenuOpen && (
+      <div className="lg:hidden py-4 border-t border-white/10 bg-gradient-to-b from-yellow-50 to-orange-50">
+        <a
+          href="/"
+          className="text-gray-800 hover:text-yellow-600 flex items-center space-x-2 py-3 px-4 transition-colors duration-200"
+        >
+          <span>Home</span>
+        </a>
+        <a
+          href="/services"
+          className="text-gray-800 hover:text-yellow-600 flex items-center space-x-2 py-3 px-4 transition-colors duration-200"
+        >
+          <span>Services</span>
+        </a>
+        <a
+          href="/about"
+          className="text-gray-800 hover:text-yellow-600 flex items-center space-x-2 py-3 px-4 transition-colors duration-200"
+        >
+          <span>About</span>
+        </a>
+        <a
+          href="/contact"
+          className="text-gray-800 hover:text-yellow-600 flex items-center space-x-2 py-3 px-4 transition-colors duration-200"
+        >
+          <span>Contact</span>
+        </a>
+        <a
+          href="/login"
+          className="bg-gradient-to-r from-yellow-600 to-orange-500 text-white mx-4 mt-4 px-2 py-1 rounded-full flex items-center space-x-2 justify-center hover:from-yellow-600 hover:to-orange-600 transition-all duration-300"
+        >
+          <LogIn size={20} />
+          <span>Login</span>
+        </a>
+      </div>
+    )}
+  </div>
+</nav>
 
       {/* Hero Section with Video Background */}
       <div className="relative min-h-screen flex items-center pt-20">

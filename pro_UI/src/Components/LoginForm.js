@@ -81,7 +81,7 @@ const ModalLogin = ({ isOpen, onClose, onSwitchToRegister }) => {
         } else {
           navigate('/user-panel');
         }
-      }, 2000);
+      }, 1000);
 
     } catch (error) {
       if (error.response) {

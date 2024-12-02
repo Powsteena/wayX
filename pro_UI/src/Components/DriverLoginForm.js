@@ -79,6 +79,7 @@ function DriverLoginForm() {
       } catch (error) {
           console.error('Login Error:', error);
           setSuccessMessage('');
+          navigate('/');
           
           if (error.response) {
               // Server responded with an error

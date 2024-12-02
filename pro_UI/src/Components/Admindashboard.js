@@ -100,7 +100,7 @@ const AdminDashboard = () => {
               {stats.map((stat, index) => (
                 <div
                   key={index}
-                  className="bg-gray-800 p-6 rounded-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 border-t-4 border-yellow-600"
+                  className="bg-black/90 p-6 rounded-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 border-t-4 border-yellow-600"
                 >
                   <div className="flex items-center justify-between">
                     <div>
@@ -109,7 +109,7 @@ const AdminDashboard = () => {
                         {stat.value.toLocaleString()}
                       </p>
                     </div>
-                    <div className="p-4 rounded-full bg-gray-700">
+                    <div className="p-4 rounded-full bg-gray-600">
                       <stat.icon className="w-8 h-8 text-yellow-600" />
                     </div>
                   </div>
@@ -155,7 +155,7 @@ const AdminDashboard = () => {
         </button>
         <div className="p-6">
           <h2 className={`text-xl font-bold transition-all ${isCollapsed ? 'hidden' : 'block'}`}>
-            Admin Panel
+            wayX
           </h2>
         </div>
         <nav className="px-3 space-y-1">

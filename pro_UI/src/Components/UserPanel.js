@@ -251,7 +251,7 @@ import axios from 'axios';
 import CreatedRides from './MyRides';
 import AcceptedRides from './AcceptedRides';
 import Footer from './Footer';
-
+import logo from '../Images/logoo.png'
 
 
 const UserPanel = () => {
@@ -322,19 +322,26 @@ const UserPanel = () => {
     <div className="min-h-screen bg-white">
       {/* Header */}
       <header className="bg-black shadow-lg">
-        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <a href="/"><span className="text-yellow-600 font-bold text-2xl">wayX</span></a>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center space-x-2 text-white hover:text-yellow-600 transition-colors"
-          >
-            <LogOut size={20} />
-            <span>Logout</span>
-          </button>
-        </div>
-      </header>
+  <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+    <div className="flex items-center space-x-4">
+      <a href="/">
+        <img 
+          src={logo} 
+          alt="WayX Logo" 
+          className="h-4 w-auto" 
+        />
+      </a>
+    </div>
+    <button
+      onClick={handleLogout}
+      className="flex items-center space-x-2 text-white hover:text-yellow-600 transition-colors"
+    >
+      <LogOut size={20} />
+      <span>Logout</span>
+    </button>
+  </div>
+</header>
+
       
 
       {/* Main Content */}

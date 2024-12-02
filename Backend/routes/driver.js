@@ -65,6 +65,12 @@ router.post('/register',
         const { username, email, password, phoneNumber, vehicleType, vehicleNumber } = req.body;
 
         try {
+          if (blockedEmails.includes(email)) {
+            return res.status(403).json({ 
+                success: false, 
+                msg: 'Your account has been blocked. Please contact support.' 
+            });
+        }
             let driver = await Driver.findOne({ email });
             if (driver) {
                 return res.status(400).json({ msg: 'Driver already exists' });
@@ -115,12 +121,25 @@ router.post('/register',
         }
     }
 );
+// List of blocked emails
+const blockedEmails = [
+  "ram@gmail.com"
+];
 
 // POST /api/driver/login - Login Driver
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
+      // Check if the email is in the blocklist
+      if (blockedEmails.includes(email)) {
+          return res.status(403).json({ 
+              success: false, 
+              msg: 'Your account has been blocked. Please contact support.' 
+          });
+      }
+
+      
       const driver = await Driver.findOne({ email });
       if (!driver) {
           return res.status(400).json({ success: false, msg: 'Invalid Credentials' });
@@ -139,6 +158,7 @@ router.post('/login', async (req, res) => {
           });
       }
 
+      // Create the payload for the token
       const payload = {
           driver: {
               id: driver.id,
@@ -148,6 +168,7 @@ router.post('/login', async (req, res) => {
           }
       };
 
+      
       jwt.sign(
           payload,
           process.env.JWT_SECRET,
@@ -167,7 +188,6 @@ router.post('/login', async (req, res) => {
       res.status(500).json({ success: false, msg: 'Server error' });
   }
 });
-
 
 //Route to get the total number of drivers
 router.get('/count', async (req, res) => {
