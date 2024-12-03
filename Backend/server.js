@@ -58,6 +58,8 @@ app.use('/api/rides', ScheduledRideRoutes);
 app.use('/api/user', authRoutes);
 app.use('/api/contact', contactRoute);  
 
+// Default route
+app.get('/', (req, res) => res.send('Server is ready'));
 
 // Socket.io connection handling
 io.on('connection', (socket) => {
