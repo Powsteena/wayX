@@ -36,7 +36,7 @@ const ManageUsers = () => {
       if (!token) throw new Error('No token found, please log in.');
 
       const response = await fetch(
-        `http://localhost:5000/api/admin/user/${userId}/${action}`,
+        `${process.env.REACT_APP_BACKEND_URL}/api/admin/user/${userId}/${action}`,
         {
           method: 'PATCH',
           headers: { Authorization: `Bearer ${token}` }

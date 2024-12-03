@@ -52,7 +52,7 @@ const ManageRides = () => {
       }
 
       const response = await axios.patch(
-        `http://localhost:5000/api/admin/riderequest/${rideRequestId}/${action}`,
+        `${process.env.REACT_APP_BACKEND_URL}/api/admin/riderequest/${rideRequestId}/${action}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );

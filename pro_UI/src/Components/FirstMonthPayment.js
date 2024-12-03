@@ -9,7 +9,7 @@ const stripePromise = loadStripe('pk_test_51QECqmJiclWUf5gQtibzZGGqWVVTi6X1bNlBZ
 
 // Create axios instance with default config
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api/driver',
+  baseURL: `${process.env.REACT_APP_BACKEND_URL}/api/driver`,
   headers: {
     'Content-Type': 'application/json',
   }

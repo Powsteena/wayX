@@ -29,9 +29,9 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const usersResponse = await fetch('http://localhost:5000/api/user/count');
-        const driversResponse = await fetch('http://localhost:5000/api/driver/count');
-        const ridesResponse = await fetch('http://localhost:5000/api/rides/count');
+        const usersResponse = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/user/count`);
+        const driversResponse = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/driver/count`);
+        const ridesResponse = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/rides/count`);
 
         if (!usersResponse.ok || !driversResponse.ok || !ridesResponse.ok) {
           throw new Error('Failed to fetch one or more resources');

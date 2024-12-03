@@ -52,8 +52,8 @@ function ManageDrivers() {
       }
 
       const url = action === 'delete'
-        ? `http://localhost:5000/api/admin/driver/${driverId}`
-        : `http://localhost:5000/api/admin/driver/${driverId}/${action}`;
+        ? `${process.env.REACT_APP_BACKEND_URL}/api/admin/driver/${driverId}`
+        : `${process.env.REACT_APP_BACKEND_URL}/api/admin/driver/${driverId}/${action}`;
 
       const response = await fetch(url, {
         method: action === 'delete' ? 'DELETE' : 'PATCH',

@@ -18,7 +18,7 @@ const MyAcceptedRides = () => {
                 }
 
                 const axiosInstance = axios.create({
-                    baseURL: 'http://localhost:5000/api/auth',
+                    baseURL: `${process.env.REACT_APP_BACKEND_URL}/api/auth`,
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
