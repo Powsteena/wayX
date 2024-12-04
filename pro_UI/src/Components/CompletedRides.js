@@ -10,7 +10,7 @@ const MatchingRides = () => {
         const fetchRides = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const response = await axios.get('http://localhost:5000/api/driver/acceptedrides', {
+                const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/driver/acceptedrides`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
 

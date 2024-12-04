@@ -58,7 +58,7 @@ const ModalRegister = ({ isOpen, onClose, onSwitchToLogin }) => {
 
     setIsLoading(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/register', formData);
+      const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/auth/register`, formData);
       localStorage.setItem('username', formData.username);
       localStorage.setItem('email', formData.email);
       setSuccessMessage('Registration successful! Redirecting to your dashboard...');

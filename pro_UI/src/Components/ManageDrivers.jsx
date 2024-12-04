@@ -29,7 +29,7 @@ function ManageDrivers() {
         throw new Error('No token found, please log in.');
       }
 
-      const response = await fetch('http://localhost:5000/api/admin/driver', {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin/driver`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await response.json();

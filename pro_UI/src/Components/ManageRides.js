@@ -30,7 +30,7 @@ const ManageRides = () => {
         throw new Error('No token found, please log in.');
       }
 
-      const response = await axios.get('http://localhost:5000/api/admin/rides', {
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/admin/rides`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setRideRequests(response.data);

@@ -16,7 +16,7 @@ const ManageUsers = () => {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No token found, please log in.');
       
-      const response = await fetch('http://localhost:5000/api/admin/users', {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin/users`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await response.json();

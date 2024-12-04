@@ -10,7 +10,7 @@ const ManageContacts = () => {
   const fetchContacts = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5000/api/admin/get/contact', {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin/get/contact`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}` // Add the admin token from localStorage
         }
@@ -43,7 +43,7 @@ const ManageContacts = () => {
 
   const handleDelete = async (id) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/contacts/${id}`, {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/contacts/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('adminToken')}`

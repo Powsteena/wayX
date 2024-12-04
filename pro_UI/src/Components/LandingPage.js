@@ -114,7 +114,7 @@ const LandingPage = () => {
     setFormStatus({ type: '', message: '' });
   
     try {
-      const response = await fetch('http://localhost:5000/api/auth/contact', {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/auth/contact`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

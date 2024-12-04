@@ -11,7 +11,7 @@ const CreatedRides = () => {
     const fetchCreatedRides = async () => {
       try {
         const token = localStorage.getItem('token');
-        const { data } = await axios.get('http://localhost:5000/api/auth/my-rides', {
+        const { data } = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/auth/my-rides`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setCreatedRides(data);
