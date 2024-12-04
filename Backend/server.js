@@ -43,8 +43,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
+
   serverSelectionTimeoutMS: 50000 
 })
 .then(() => console.log('Connected to MongoDB'))
@@ -86,3 +85,4 @@ server.listen(PORT, () => {
 
 // Export io instance for use in controllers
 module.exports = { io };
+
