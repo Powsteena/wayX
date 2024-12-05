@@ -120,7 +120,7 @@ const io = new Server(server, {
 app.use(express.json());
 app.use(
   cors({
-    origin: process.env.FRONT_END_URL,
+    origin: [process.env.FRONT_END_URL, 'https://wayx.vercel.app'],
     methods: 'GET,POST,PUT,DELETE,PATCH',
     allowedHeaders: 'Content-Type,Authorization',
   })
